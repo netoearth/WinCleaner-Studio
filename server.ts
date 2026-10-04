@@ -3,6 +3,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import { 
+  getRealDrives, 
+  scanRealJunk, 
+  executeRealClean, 
+  getRealInstalledApps 
+} from './src/server/systemService';
 
 dotenv.config();
 
@@ -13,6 +19,47 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
+
+// 1. Real Logical Drives Endpoint
+app.get('/api/system/drives', async (req, res) => {
+  try {
+    const drives = await getRealDrives();
+    res.json({ success: true, drives, isWindows: process.platform === 'win32' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 2. Real Junk & Cache Scanner Endpoint
+app.post('/api/system/scan-junk', async (req, res) => {
+  try {
+    const items = await scanRealJunk();
+    res.json({ success: true, items });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 3. Real Cleanup Executor Endpoint
+app.post('/api/system/clean', async (req, res) => {
+  try {
+    const { categoryIds } = req.body;
+    const result = await executeRealClean(categoryIds || []);
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 4. Real Installed Software from Registry Endpoint
+app.get('/api/system/installed-apps', async (req, res) => {
+  try {
+    const apps = await getRealInstalledApps();
+    res.json({ success: true, apps });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
 
 // Server-side Gemini client with aistudio-build User-Agent
 const apiKey = process.env.GEMINI_API_KEY;
