@@ -55,7 +55,7 @@
 
 ### 3. 📊 大文件深度透视与磁盘存储空间分布 (Large File Analyzer & Disk Space Visualizer)
 * **多阈值过滤**：支持 `>100MB`、`>500MB`、`>1GB`、`>5GB` 快速筛选。
-* **全景存储分布图**：基于 **Recharts** 打造的双重视图（**圆环占比图 Donut Chart** 与 **分类柱状图 Bar Chart**），细分剖析：
+* **全景存储分布图**：基于高性能原生 SVG 打造的双重视图（**圆环占比图 Donut Chart** 与 **分类柱状图 Bar Chart**），细分剖析：
   * Windows 系统核心（`C:\Windows`, WinSxS, `pagefile.sys`）
   * 已安装软件与游戏（`Program Files`, Steam, Epic）
   * 用户个人数据（文档、下载、桌面大文件）
