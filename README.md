@@ -165,8 +165,11 @@
 项目基于 React 19、Tailwind CSS 与 Vite，已配置好全端 Express 服务：
 
 ```bash
-# 安装依赖
+# 安装依赖 (项目已自带 .npmrc 自动处理依赖解析，亦可显式加上参数)
 npm install
+
+# 若在某些特定旧版 npm 环境下提示 ERESOLVE，可使用：
+npm install --legacy-peer-deps
 
 # 启动全栈开发服务 (端口 3000)
 npm run dev
