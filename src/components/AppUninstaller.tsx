@@ -124,8 +124,19 @@ export const AppUninstaller: React.FC<AppUninstallerProps> = ({
       </div>
 
       {/* App List */}
-      <div className="space-y-3">
-        {filteredApps.map((app) => {
+      {filteredApps.length === 0 ? (
+        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mx-auto">
+            <PackageX className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-semibold text-slate-100">未发现匹配的已安装软件</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+            正在读取 Windows 注册表 Uninstall 清单，或当前分类筛选下暂无应用程序。
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredApps.map((app) => {
           const isExpanded = expandedAppId === app.id;
 
           return (
@@ -255,7 +266,8 @@ export const AppUninstaller: React.FC<AppUninstallerProps> = ({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -7,7 +7,14 @@ import {
   getRealDrives, 
   scanRealJunk, 
   executeRealClean, 
-  getRealInstalledApps 
+  getRealInstalledApps,
+  getRealSmartHealth,
+  scanRealDuplicates,
+  scanRealLargeFiles,
+  deleteRealFile,
+  getRealStartupItems,
+  toggleRealStartupItem,
+  executeRealUninstall
 } from './src/server/systemService';
 
 dotenv.config();
@@ -56,6 +63,82 @@ app.get('/api/system/installed-apps', async (req, res) => {
   try {
     const apps = await getRealInstalledApps();
     res.json({ success: true, apps });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 5. Real Duplicate Files Scanner Endpoint
+app.post('/api/system/scan-duplicates', async (req, res) => {
+  try {
+    const { targetFolder } = req.body || {};
+    const groups = await scanRealDuplicates(targetFolder);
+    res.json({ success: true, groups });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 6. Real Large Files Scanner Endpoint (> 50MB)
+app.post('/api/system/scan-large-files', async (req, res) => {
+  try {
+    const { targetFolder, minSizeBytes } = req.body || {};
+    const files = await scanRealLargeFiles(targetFolder, minSizeBytes);
+    res.json({ success: true, files });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 7. Real S.M.A.R.T. Hardware Health & Telemetry Endpoint
+app.get('/api/system/smart-health', async (req, res) => {
+  try {
+    const smart = await getRealSmartHealth();
+    res.json({ success: true, smart });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 8. Real Single File Delete (Recycle Bin)
+app.post('/api/system/delete-file', async (req, res) => {
+  try {
+    const { filePath } = req.body;
+    if (!filePath) return res.status(400).json({ success: false, error: 'Path required' });
+    const success = await deleteRealFile(filePath);
+    res.json({ success });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 9. Real Windows Startup Items Endpoint
+app.get('/api/system/startup-items', async (req, res) => {
+  try {
+    const items = await getRealStartupItems();
+    res.json({ success: true, items });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 10. Toggle Real Windows Startup Item
+app.post('/api/system/toggle-startup', async (req, res) => {
+  try {
+    const { name, location, enabled } = req.body;
+    const result = await toggleRealStartupItem(name, location, enabled);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error?.message });
+  }
+});
+
+// 11. Execute Real Uninstall Program
+app.post('/api/system/uninstall-app', async (req, res) => {
+  try {
+    const { command, appName, cleanResiduals } = req.body;
+    const result = await executeRealUninstall(command, appName, cleanResiduals);
+    res.json(result);
   } catch (error: any) {
     res.status(500).json({ success: false, error: error?.message });
   }

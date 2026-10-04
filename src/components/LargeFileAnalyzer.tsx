@@ -21,16 +21,21 @@ interface LargeFileAnalyzerProps {
   files: LargeFileItem[];
   onDeleteFile: (fileId: string) => void;
   selectedDrive: string;
+  onScanPath?: (folder?: string, minSizeBytes?: number) => void;
+  isScanning?: boolean;
 }
 
 export const LargeFileAnalyzer: React.FC<LargeFileAnalyzerProps> = ({
   files,
   onDeleteFile,
   selectedDrive,
+  onScanPath,
+  isScanning,
 }) => {
   const [minSizeMB, setMinSizeMB] = useState<number>(500);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [customPath, setCustomPath] = useState<string>('');
   const [sortBy, setSortBy] = useState<'size' | 'date'>('size');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -148,12 +153,46 @@ export const LargeFileAnalyzer: React.FC<LargeFileAnalyzerProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Custom Directory Input */}
+        <div className="mt-3 pt-3 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-[280px]">
+            <HardDrive className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span className="text-xs text-slate-400 shrink-0">指定透视目录:</span>
+            <input
+              type="text"
+              placeholder="输入本地盘符或目录 (例如 C:\Users 或 D:\，留空为默认常用大文件目录)"
+              value={customPath}
+              onChange={(e) => setCustomPath(e.target.value)}
+              className="flex-1 px-3 py-1.5 text-xs bg-slate-950/90 border border-slate-800 focus:border-cyan-500 rounded-lg text-slate-200 placeholder-slate-600 focus:outline-none"
+            />
+          </div>
+          <button
+            onClick={() => onScanPath?.(customPath.trim() || undefined, minSizeMB * 1024 * 1024)}
+            disabled={isScanning}
+            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span>{isScanning ? '正在全盘检索大文件...' : '透视指定位置'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Large File List */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-        <div className="divide-y divide-slate-800/70">
-          {filteredFiles.map((file, idx) => {
+      {filteredFiles.length === 0 ? (
+        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mx-auto">
+            <HardDrive className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-semibold text-slate-100">未发现大于当前阈值的大文件</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+            当前扫描范围内未检索到大于 {minSizeMB} MB 的冗余大文件，可尝试降低大小阈值或搜索其他格式。
+          </p>
+        </div>
+      ) : (
+        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+          <div className="divide-y divide-slate-800/70">
+            {filteredFiles.map((file, idx) => {
             const badge = getCategoryBadge(file.category);
             const Icon = badge.icon;
 
@@ -218,8 +257,9 @@ export const LargeFileAnalyzer: React.FC<LargeFileAnalyzerProps> = ({
               </div>
             );
           })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

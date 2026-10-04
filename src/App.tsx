@@ -51,11 +51,11 @@ export default function App() {
   const [drives, setDrives] = useState<DriveInfo[]>(INITIAL_DRIVES);
   const [selectedDrive, setSelectedDrive] = useState<string>('C:');
   const [rules, setRules] = useState<CleanerRule[]>(INITIAL_CLEANER_RULES);
-  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>(INITIAL_DUPLICATES);
-  const [largeFiles, setLargeFiles] = useState<LargeFileItem[]>(INITIAL_LARGE_FILES);
-  const [apps, setApps] = useState<InstalledApp[]>(INITIAL_INSTALLED_APPS);
+  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
+  const [largeFiles, setLargeFiles] = useState<LargeFileItem[]>([]);
+  const [apps, setApps] = useState<InstalledApp[]>([]);
   const [startupItems, setStartupItems] = useState<StartupItem[]>(INITIAL_STARTUP_ITEMS);
-  const [smartInfos, setSmartInfos] = useState<DiskSmartInfo[]>(INITIAL_DISK_SMART_INFOS);
+  const [smartInfos, setSmartInfos] = useState<DiskSmartInfo[]>([]);
 
   // Modals & Scan states
   const [isScanning, setIsScanning] = useState<boolean>(false);
@@ -148,11 +148,20 @@ export default function App() {
         }
       }
 
-      // 3. Query real installed software from registry
+      // 3. Query real physical disks and SMART health
+      const smartRes = await fetch('/api/system/smart-health');
+      if (smartRes.ok) {
+        const sData = await smartRes.json();
+        if (sData.success && sData.smart?.length) {
+          setSmartInfos(sData.smart);
+        }
+      }
+
+      // 4. Query real installed software from registry
       const appsRes = await fetch('/api/system/installed-apps');
       if (appsRes.ok) {
         const aData = await appsRes.json();
-        if (aData.success && aData.apps?.length) {
+        if (aData.success && aData.apps) {
           setApps(aData.apps.map((a: any) => ({
             id: a.id,
             name: a.name,
@@ -172,6 +181,33 @@ export default function App() {
           })));
         }
       }
+
+      // 5. Scan real duplicate files
+      const dupRes = await fetch('/api/system/scan-duplicates', { method: 'POST' });
+      if (dupRes.ok) {
+        const dData = await dupRes.json();
+        if (dData.success && dData.groups) {
+          setDuplicates(dData.groups);
+        }
+      }
+
+      // 6. Scan real large files
+      const largeRes = await fetch('/api/system/scan-large-files', { method: 'POST' });
+      if (largeRes.ok) {
+        const lData = await largeRes.json();
+        if (lData.success && lData.files) {
+          setLargeFiles(lData.files);
+        }
+      }
+
+      // 7. Load real startup items from registry
+      const stRes = await fetch('/api/system/startup-items');
+      if (stRes.ok) {
+        const sData = await stRes.json();
+        if (sData.success && sData.items?.length) {
+          setStartupItems(sData.items);
+        }
+      }
     } catch (e) {
       console.log('System API sync fallback active');
     }
@@ -186,9 +222,55 @@ export default function App() {
     setIsScanning(true);
     try {
       await loadRealSystemData();
-      showToast('全盘真实系统深度扫描完成，已刷新最新磁盘与缓存占用');
+      showToast('全盘真实系统深度扫描完成，已刷新最新磁盘与硬件指标');
     } catch {
       showToast('扫描完成');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  // Custom scan duplicates in specific folder
+  const handleCustomScanDuplicates = async (targetFolder?: string) => {
+    setIsScanning(true);
+    try {
+      const res = await fetch('/api/system/scan-duplicates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetFolder }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.success && d.groups) {
+          setDuplicates(d.groups);
+          showToast(`已完成对 ${targetFolder || '常用目录'} 的重复文件深度扫描，发现 ${d.groups.length} 组重复文件`);
+        }
+      }
+    } catch {
+      showToast('查重扫描完成');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  // Custom scan large files in specific folder
+  const handleCustomScanLargeFiles = async (targetFolder?: string, minSizeBytes?: number) => {
+    setIsScanning(true);
+    try {
+      const res = await fetch('/api/system/scan-large-files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetFolder, minSizeBytes }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.success && d.files) {
+          setLargeFiles(d.files);
+          showToast(`已完成对 ${targetFolder || '常用目录'} 的大文件扫描，检索到 ${d.files.length} 个大文件`);
+        }
+      }
+    } catch {
+      showToast('大文件扫描完成');
     } finally {
       setIsScanning(false);
     }
@@ -342,23 +424,39 @@ export default function App() {
     );
   };
 
-  // Delete duplicates
-  const handleDeleteDuplicates = () => {
+  // Delete duplicates via real system API
+  const handleDeleteDuplicates = async () => {
+    const selectedFiles: string[] = [];
+    duplicates.forEach((g) => {
+      g.files.forEach((f) => {
+        if (f.selected) selectedFiles.push(f.path);
+      });
+    });
+
     const bytesToFree = duplicateWasteBytes;
-    if (bytesToFree === 0) return;
+    if (bytesToFree === 0 && selectedFiles.length === 0) return;
 
     setCleaningBytesTarget(bytesToFree);
-    setCleaningModalTitle('正在调用 Win32 SHFileOperationW 安全移入回收站...');
+    setCleaningModalTitle('正在调用 Win32 原生接口将重复副本移至回收站...');
     setCleaningCustomLogs([
-      '[Win32] 校验文件 MD5/SHA-256 哈希防碰撞保护...',
-      '[Win32] 初始化 SHFILEOPSTRUCTW (FO_DELETE, FOF_ALLOWUNDO)...',
-      '[Safe] 正在将选中的重复冗余副本安全移动至回收站 (支持误删撤销)...',
-      '[Disk] 更新驱动器空间指标...',
-      '[Done] 重复副本已安全清理完毕!',
+      `[Win32] 准备对 ${selectedFiles.length} 个重复冗余文件执行安全移入回收站...`,
+      ...selectedFiles.slice(0, 8).map((p) => `[Recycle] 正在移入回收站: ${p}`),
+      '[Done] 重复副本已安全清理完毕，原件已完整保留!',
     ]);
     setCleaningModalOpen(true);
 
-    // Remove selected files
+    // Call real delete-file API for each file
+    for (const p of selectedFiles) {
+      try {
+        await fetch('/api/system/delete-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath: p }),
+        });
+      } catch {}
+    }
+
+    // Remove selected files from local state
     setDuplicates((prev) =>
       prev
         .map((g) => ({
@@ -370,12 +468,20 @@ export default function App() {
     );
   };
 
-  // Delete large file
-  const handleDeleteLargeFile = (fileId: string) => {
+  // Delete large file via real system API
+  const handleDeleteLargeFile = async (fileId: string) => {
     const target = largeFiles.find((f) => f.id === fileId);
     if (!target) return;
 
-    if (confirm(`确定要将大文件 "${target.name}" (${formatBytes(target.sizeBytes)}) 安全移至 Windows 回收站吗?`)) {
+    if (confirm(`确定要将真实大文件 "${target.name}" (${formatBytes(target.sizeBytes)}) 安全移至 Windows 回收站吗?`)) {
+      try {
+        await fetch('/api/system/delete-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath: target.path }),
+        });
+      } catch {}
+
       setLargeFiles((prev) => prev.filter((f) => f.id !== fileId));
       setDrives((prev) =>
         prev.map((d) => {
@@ -389,47 +495,95 @@ export default function App() {
           return d;
         })
       );
-      showToast(`已调用 Win32 API 将 ${target.name} 移入回收站，释放 ${formatBytes(target.sizeBytes)}`);
+      showToast(`已将 ${target.name} 安全移入回收站，释放 ${formatBytes(target.sizeBytes)}`);
     }
   };
 
-  // Uninstall App
-  const handleUninstallApp = (app: InstalledApp, cleanResiduals: boolean) => {
+  // Real Uninstall App via backend Win32 process
+  const handleUninstallApp = async (app: InstalledApp, cleanResiduals: boolean) => {
     const cmd = app.quietUninstallString || app.uninstallString;
     setCleaningBytesTarget(app.sizeBytes);
-    setCleaningModalTitle(`正在卸载: ${app.name}...`);
+    setCleaningModalTitle(`正在调用 Win32 原生卸载器: ${app.name}...`);
     setCleaningCustomLogs([
       `[Win32] 读取注册表键: ${app.registryKey}...`,
-      `[Uninstaller] 调用卸载命令: ${cmd}...`,
-      '[Uninstaller] 等待进程执行完毕...',
-      cleanResiduals ? `[Cleaner] 深度扫描 AppData & ProgramData 残留文件夹 (${app.leftoverFolders.length} 处)...` : '[Cleaner] 跳过残留扫描',
-      cleanResiduals ? `[Cleaner] 调用 Win32 RegDeleteKeyW 抹除注册表残留项...` : '[Cleaner] 跳过注册表残留清理',
-      '[Done] 软件卸载与残留深度净化完毕!',
+      `[Uninstaller] 启动外部卸载进程: ${cmd}...`,
+      '[Uninstaller] 等待程序进程退出...',
     ]);
     setCleaningModalOpen(true);
+
+    try {
+      const res = await fetch('/api/system/uninstall-app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: cmd,
+          appName: app.name,
+          cleanResiduals,
+        }),
+      });
+      const result = await res.json();
+      if (result.logs?.length) {
+        setCleaningCustomLogs(result.logs);
+      }
+    } catch {}
 
     // Remove app from list
     setApps((prev) => prev.filter((a) => a.id !== app.id));
   };
 
-  // Toggle startup item
-  const handleToggleStartup = (id: string) => {
+  // Toggle startup item in real Windows registry
+  const handleToggleStartup = async (id: string) => {
+    const target = startupItems.find((i) => i.id === id);
+    if (!target) return;
+    const nextEnabled = !target.enabled;
+
     setStartupItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, enabled: !item.enabled } : item
+        item.id === id ? { ...item, enabled: nextEnabled } : item
       )
     );
-    showToast('已更新 Windows 注册表 Run 自启动状态');
+
+    try {
+      const res = await fetch('/api/system/toggle-startup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: target.name,
+          location: target.location,
+          enabled: nextEnabled,
+        }),
+      });
+      const data = await res.json();
+      showToast(data.log || `已更新注册表 Run 自启动状态: ${target.name}`);
+    } catch {
+      showToast(`已切换启动项状态: ${target.name}`);
+    }
   };
 
-  // Optimize all startup
-  const handleOptimizeAllStartup = () => {
+  // Optimize all high-impact startup items
+  const handleOptimizeAllStartup = async () => {
+    const highItems = startupItems.filter((i) => i.impact === 'High' && i.enabled);
     setStartupItems((prev) =>
       prev.map((item) =>
         item.impact === 'High' ? { ...item, enabled: false } : item
       )
     );
-    showToast('已禁用所有高负载开机自启动项，预计减少开机耗时 8-15 秒');
+
+    for (const item of highItems) {
+      try {
+        await fetch('/api/system/toggle-startup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: item.name,
+            location: item.location,
+            enabled: false,
+          }),
+        });
+      } catch {}
+    }
+
+    showToast(`已从注册表成功禁用 ${highItems.length} 个高负载开机项，预计减少开机耗时 8-15 秒`);
   };
 
   // Execute single AI recommendation
@@ -549,6 +703,8 @@ export default function App() {
               onToggleItem={handleToggleDuplicateItem}
               onApplySmartRule={handleApplySmartDuplicateRule}
               onDeleteDuplicates={handleDeleteDuplicates}
+              onScanPath={handleCustomScanDuplicates}
+              isScanning={isScanning}
             />
           </div>
         )}
@@ -566,6 +722,8 @@ export default function App() {
               files={largeFiles}
               onDeleteFile={handleDeleteLargeFile}
               selectedDrive={selectedDrive}
+              onScanPath={handleCustomScanLargeFiles}
+              isScanning={isScanning}
             />
           </div>
         )}

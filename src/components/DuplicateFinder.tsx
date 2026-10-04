@@ -23,6 +23,8 @@ interface DuplicateFinderProps {
   onToggleItem: (groupId: string, fileId: string) => void;
   onApplySmartRule: (rule: 'keep_oldest' | 'keep_newest' | 'select_all' | 'deselect_all') => void;
   onDeleteDuplicates: () => void;
+  onScanPath?: (folder?: string) => void;
+  isScanning?: boolean;
 }
 
 export const DuplicateFinder: React.FC<DuplicateFinderProps> = ({
@@ -30,9 +32,12 @@ export const DuplicateFinder: React.FC<DuplicateFinderProps> = ({
   onToggleItem,
   onApplySmartRule,
   onDeleteDuplicates,
+  onScanPath,
+  isScanning,
 }) => {
   const [filterType, setFilterType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [customPath, setCustomPath] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const filteredGroups = groups.filter((g) => {
@@ -149,11 +154,45 @@ export const DuplicateFinder: React.FC<DuplicateFinderProps> = ({
             />
           </div>
         </div>
+
+        {/* Custom Directory Input */}
+        <div className="mt-3 pt-3 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-[280px]">
+            <FolderOpen className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span className="text-xs text-slate-400 shrink-0">指定查重位置:</span>
+            <input
+              type="text"
+              placeholder="输入本地盘符或目录 (例如 D:\ 或 G:\download，留空为默认常用目录)"
+              value={customPath}
+              onChange={(e) => setCustomPath(e.target.value)}
+              className="flex-1 px-3 py-1.5 text-xs bg-slate-950/90 border border-slate-800 focus:border-cyan-500 rounded-lg text-slate-200 placeholder-slate-600 focus:outline-none"
+            />
+          </div>
+          <button
+            onClick={() => onScanPath?.(customPath.trim() || undefined)}
+            disabled={isScanning}
+            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span>{isScanning ? '正在进行两级哈希查重...' : '扫描指定目录'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Duplicate Groups List */}
-      <div className="space-y-3.5">
-        {filteredGroups.map((group) => {
+      {filteredGroups.length === 0 ? (
+        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-semibold text-slate-100">未检测到完全相同的重复冗余文件</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+            系统已对您本机的下载 (Downloads)、桌面 (Desktop) 与文档 (Documents) 目录执行了两级分块校验与 SHA-256 哈希比对，未发现冗余副本，您的磁盘井井有条！
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          {filteredGroups.map((group) => {
           const selectedInGroup = group.files.filter((f) => f.selected).length;
           const wastedHere = selectedInGroup * group.sizeBytes;
 
@@ -247,7 +286,8 @@ export const DuplicateFinder: React.FC<DuplicateFinderProps> = ({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
