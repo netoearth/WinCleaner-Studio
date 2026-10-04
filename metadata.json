@@ -1,0 +1,6 @@
+{
+  "name": "WinCleaner Studio - Windows 系统清理与性能优化大师",
+  "description": "基于 Win32 API 与 Rust/Python 高效轻量内核的专业级 Windows 系统垃圾清理、浏览器缓存净化、大文件与重复文件查重及软件一键卸载工具。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
