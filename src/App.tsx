@@ -41,7 +41,9 @@ import {
   Code2, 
   Trash2, 
   Zap, 
-  HardDrive 
+  HardDrive,
+  Copy,
+  PackageX
 } from 'lucide-react';
 
 export default function App() {
@@ -465,74 +467,136 @@ export default function App() {
           isScanning={isScanning}
         />
 
-        {/* Disk Space Usage Breakdown Chart (Recharts Donut / Bar) */}
-        <DiskUsageChartPanel
-          currentDrive={drives.find((d) => d.letter === selectedDrive) || drives[0]}
-          cacheBytesReclaimable={junkBytes}
-          onNavigateToCleaner={() => setActiveTab('cleaner')}
-        />
-
-        {/* Disk S.M.A.R.T. Health, Temp & Life Telemetry Panel */}
-        <DiskSmartHealthPanel
-          smartInfos={smartInfos}
-          selectedDriveLetter={selectedDrive}
-          onDriveSelect={(letter) => setSelectedDrive(letter)}
-        />
-
-        {/* AI Smart Cleanup Recommendations Advisor */}
-        <AiSmartAdvisor
-          currentDrive={drives.find((d) => d.letter === selectedDrive) || drives[0]}
-          rules={rules}
-          duplicates={duplicates}
-          largeFiles={largeFiles}
-          apps={apps}
-          onExecuteAction={handleExecuteAiSuggestion}
-          onExecuteBatchAll={handleQuickCleanAll}
-          setActiveTab={setActiveTab}
-        />
+        {/* In-Page Primary Tab Navigation Bar */}
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-2 mb-6 backdrop-blur-md shadow-md">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1.5">
+            {[
+              { id: 'cleaner' as ActiveTab, label: '系统垃圾清理', icon: Trash2, badge: formatBytes(junkBytes), badgeColor: 'text-amber-400 bg-amber-950/50 border-amber-800/40' },
+              { id: 'duplicates' as ActiveTab, label: '重复文件查重', icon: Copy, badge: `${duplicates.length}组`, badgeColor: 'text-cyan-400 bg-cyan-950/50 border-cyan-800/40' },
+              { id: 'large_files' as ActiveTab, label: '大文件透视', icon: HardDrive, badge: `${largeFiles.length}个`, badgeColor: 'text-blue-400 bg-blue-950/50 border-blue-800/40' },
+              { id: 'uninstaller' as ActiveTab, label: '软件深度卸载', icon: PackageX, badge: `${apps.length}款`, badgeColor: 'text-purple-400 bg-purple-950/50 border-purple-800/40' },
+              { id: 'startup' as ActiveTab, label: '开机自启优化', icon: Zap, badge: `${startupItems.length}项`, badgeColor: 'text-emerald-400 bg-emerald-950/50 border-emerald-800/40' },
+              { id: 'health' as ActiveTab, label: '硬盘健康检测', icon: ShieldCheck, badge: `${smartInfos.length}块`, badgeColor: 'text-teal-400 bg-teal-950/50 border-teal-800/40' },
+              { id: 'code_engine' as ActiveTab, label: 'Win32 原生内核', icon: Code2, badge: 'Rust/Py', badgeColor: 'text-slate-400 bg-slate-800/60 border-slate-700/50' },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                  }}
+                  className={`flex flex-col sm:flex-row items-center justify-center sm:justify-between p-2.5 sm:px-3 sm:py-2.5 rounded-xl transition-all cursor-pointer text-center sm:text-left ${
+                    isActive
+                      ? 'bg-gradient-to-r from-slate-800 to-slate-800/90 border border-cyan-500/50 shadow-sm text-cyan-300 font-semibold'
+                      : 'hover:bg-slate-800/40 text-slate-400 hover:text-slate-200 border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
+                    <span className="text-xs truncate">{tab.label}</span>
+                  </div>
+                  {tab.badge && (
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border mt-1 sm:mt-0 ${tab.badgeColor}`}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Tab View Router */}
         {activeTab === 'cleaner' && (
-          <JunkCleaner
-            rules={rules}
-            onToggleRule={handleToggleRule}
-            onSelectAll={handleSelectAllRules}
-            onCleanSelected={handleCleanJunk}
-            onRescan={handleRescan}
-            isScanning={isScanning}
-          />
+          <div className="space-y-6">
+            {/* Disk Space Usage Breakdown Chart */}
+            <DiskUsageChartPanel
+              currentDrive={drives.find((d) => d.letter === selectedDrive) || drives[0]}
+              cacheBytesReclaimable={junkBytes}
+              onNavigateToCleaner={() => setActiveTab('cleaner')}
+            />
+
+            {/* AI Smart Cleanup Recommendations Advisor */}
+            <AiSmartAdvisor
+              currentDrive={drives.find((d) => d.letter === selectedDrive) || drives[0]}
+              rules={rules}
+              duplicates={duplicates}
+              largeFiles={largeFiles}
+              apps={apps}
+              onExecuteAction={handleExecuteAiSuggestion}
+              onExecuteBatchAll={handleQuickCleanAll}
+              setActiveTab={setActiveTab}
+            />
+
+            {/* Junk Cleaner Rules Checklist */}
+            <JunkCleaner
+              rules={rules}
+              onToggleRule={handleToggleRule}
+              onSelectAll={handleSelectAllRules}
+              onCleanSelected={handleCleanJunk}
+              onRescan={handleRescan}
+              isScanning={isScanning}
+            />
+          </div>
         )}
 
         {activeTab === 'duplicates' && (
-          <DuplicateFinder
-            groups={duplicates}
-            onToggleItem={handleToggleDuplicateItem}
-            onApplySmartRule={handleApplySmartDuplicateRule}
-            onDeleteDuplicates={handleDeleteDuplicates}
-          />
+          <div className="space-y-6">
+            <DuplicateFinder
+              groups={duplicates}
+              onToggleItem={handleToggleDuplicateItem}
+              onApplySmartRule={handleApplySmartDuplicateRule}
+              onDeleteDuplicates={handleDeleteDuplicates}
+            />
+          </div>
         )}
 
         {activeTab === 'large_files' && (
-          <LargeFileAnalyzer
-            files={largeFiles}
-            onDeleteFile={handleDeleteLargeFile}
-            selectedDrive={selectedDrive}
-          />
+          <div className="space-y-6">
+            {/* Visualizer on top for large files */}
+            <DiskUsageChartPanel
+              currentDrive={drives.find((d) => d.letter === selectedDrive) || drives[0]}
+              cacheBytesReclaimable={junkBytes}
+              onNavigateToCleaner={() => setActiveTab('cleaner')}
+            />
+
+            <LargeFileAnalyzer
+              files={largeFiles}
+              onDeleteFile={handleDeleteLargeFile}
+              selectedDrive={selectedDrive}
+            />
+          </div>
         )}
 
         {activeTab === 'uninstaller' && (
-          <AppUninstaller
-            apps={apps}
-            onUninstallApp={handleUninstallApp}
-          />
+          <div className="space-y-6">
+            <AppUninstaller
+              apps={apps}
+              onUninstallApp={handleUninstallApp}
+            />
+          </div>
         )}
 
         {activeTab === 'startup' && (
-          <StartupManager
-            items={startupItems}
-            onToggleItem={handleToggleStartup}
-            onOptimizeAll={handleOptimizeAllStartup}
-          />
+          <div className="space-y-6">
+            <StartupManager
+              items={startupItems}
+              onToggleItem={handleToggleStartup}
+              onOptimizeAll={handleOptimizeAllStartup}
+            />
+          </div>
+        )}
+
+        {activeTab === 'health' && (
+          <div className="space-y-6">
+            <DiskSmartHealthPanel
+              smartInfos={smartInfos}
+              selectedDriveLetter={selectedDrive}
+              onDriveSelect={(letter) => setSelectedDrive(letter)}
+            />
+          </div>
         )}
 
         {activeTab === 'code_engine' && (

@@ -1,4 +1,4 @@
-export type ActiveTab = 'cleaner' | 'duplicates' | 'large_files' | 'uninstaller' | 'startup' | 'code_engine';
+export type ActiveTab = 'cleaner' | 'duplicates' | 'large_files' | 'uninstaller' | 'startup' | 'health' | 'code_engine';
 
 export type CleanerCategory = 'windows' | 'browser' | 'developer' | 'system';
 

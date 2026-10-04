@@ -14,6 +14,7 @@ export interface RealDrive {
   type: string;
   health: string;
   isSystem: boolean;
+  isSystemDrive: boolean;
 }
 
 export interface RealJunkCategory {
@@ -46,14 +47,32 @@ export async function getRealDrives(): Promise<RealDrive[]> {
 
   if (isWin) {
     return new Promise((resolve) => {
-      const psScript = `Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DriveType -eq 2 -or $_.DriveType -eq 3 } | Select-Object DeviceID, Size, FreeSpace, VolumeName, FileSystem | ConvertTo-Json`;
-      exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psScript}"`, { windowsHide: true }, (err, stdout) => {
+      // Force UTF-8 encoding and return Base64 to prevent Windows GBK/CP936 console mojibake
+      const psScript = `
+        $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8;
+        $drives = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DriveType -eq 2 -or $_.DriveType -eq 3 } | Select-Object DeviceID, Size, FreeSpace, VolumeName, FileSystem;
+        $json = $drives | ConvertTo-Json -Compress;
+        [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($json))
+      `;
+
+      exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psScript.replace(/\n\s*/g, ' ')}"`, { windowsHide: true }, (err, stdout) => {
         if (err || !stdout.trim()) {
           return resolve(getFallbackDrives());
         }
 
         try {
-          let data = JSON.parse(stdout);
+          const raw = stdout.trim();
+          let jsonStr: string;
+          try {
+            jsonStr = Buffer.from(raw, 'base64').toString('utf8');
+            if (!jsonStr.startsWith('[') && !jsonStr.startsWith('{')) {
+              jsonStr = raw;
+            }
+          } catch {
+            jsonStr = raw;
+          }
+
+          let data = JSON.parse(jsonStr);
           if (!Array.isArray(data)) data = [data];
 
           const drives: RealDrive[] = data
@@ -64,10 +83,14 @@ export async function getRealDrives(): Promise<RealDrive[]> {
               const free = parseInt(d.FreeSpace, 10) || 0;
               const used = Math.max(0, total - free);
               const isSys = letter.startsWith('C');
+              
+              // Clean up label and filter out any replacement characters
+              const rawLabel = (d.VolumeName || '').replace(/[\uFFFD\u0000]/g, '').trim();
+              const label = rawLabel || (isSys ? 'Windows 系统盘' : `本地磁盘 (${letter})`);
 
               return {
                 letter,
-                label: d.VolumeName || (isSys ? 'Windows 系统盘' : `本地磁盘 (${letter})`),
+                label,
                 fileSystem: d.FileSystem || 'NTFS',
                 totalBytes: total,
                 usedBytes: used,
@@ -75,6 +98,7 @@ export async function getRealDrives(): Promise<RealDrive[]> {
                 type: isSys ? 'NVMe PCIe 4.0 SSD' : '高速存储磁盘',
                 health: 'Good (100%)',
                 isSystem: isSys,
+                isSystemDrive: isSys,
               };
             });
 
@@ -102,6 +126,7 @@ function getFallbackDrives(): RealDrive[] {
       type: 'Samsung 990 PRO NVMe 2TB',
       health: 'Good (99%)',
       isSystem: true,
+      isSystemDrive: true,
     },
     {
       letter: 'D:',
@@ -113,6 +138,7 @@ function getFallbackDrives(): RealDrive[] {
       type: 'WD_BLACK SN850X 1TB',
       health: 'Good (100%)',
       isSystem: false,
+      isSystemDrive: false,
     },
   ];
 }
@@ -391,34 +417,48 @@ export async function getRealInstalledApps(): Promise<RealAppItem[]> {
 
   return new Promise((resolve) => {
     const ps = `
+      $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8;
       $paths = @(
         "HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*",
         "HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*",
         "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*"
-      )
-      Get-ItemProperty $paths -ErrorAction SilentlyContinue |
+      );
+      $apps = Get-ItemProperty $paths -ErrorAction SilentlyContinue |
         Where-Object { $_.DisplayName -and $_.DisplayName.Trim() -ne "" -and -not $_.SystemComponent } |
         Select-Object DisplayName, Publisher, DisplayVersion, InstallDate, EstimatedSize, UninstallString, QuietUninstallString |
-        Sort-Object DisplayName -Unique |
-        ConvertTo-Json -Compress
+        Sort-Object DisplayName -Unique;
+      $json = $apps | ConvertTo-Json -Compress;
+      [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($json))
     `;
 
-    exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${ps.replace(/\n/g, ' ')}"`, { maxBuffer: 1024 * 1024 * 10, windowsHide: true }, (err, stdout) => {
+    exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${ps.replace(/\n\s*/g, ' ')}"`, { maxBuffer: 1024 * 1024 * 10, windowsHide: true }, (err, stdout) => {
       if (err || !stdout.trim()) return resolve([]);
       try {
-        let items = JSON.parse(stdout);
+        const raw = stdout.trim();
+        let jsonStr = raw;
+        try {
+          jsonStr = Buffer.from(raw, 'base64').toString('utf8');
+          if (!jsonStr.startsWith('[') && !jsonStr.startsWith('{')) {
+            jsonStr = raw;
+          }
+        } catch {
+          jsonStr = raw;
+        }
+
+        let items = JSON.parse(jsonStr);
         if (!Array.isArray(items)) items = [items];
 
         const apps: RealAppItem[] = items.slice(0, 50).map((a: any, idx: number) => {
           const sizeKB = parseInt(a.EstimatedSize, 10) || 0;
-          const name = a.DisplayName || '未命名应用';
+          const rawName = (a.DisplayName || '未命名应用').replace(/[\uFFFD\u0000]/g, '').trim();
+          const name = rawName || '未知程序';
           const isBloat = /McAfee|Norton|Avast|360|Baidu|Weather|GameBar/i.test(name);
 
           return {
             id: `app-real-${idx}`,
             name,
-            publisher: a.Publisher || '未知发布商',
-            version: a.DisplayVersion || '1.0.0',
+            publisher: (a.Publisher || '未知发布商').replace(/[\uFFFD\u0000]/g, '').trim(),
+            version: (a.DisplayVersion || '1.0.0').trim(),
             installDate: a.InstallDate || '近期安装',
             sizeBytes: sizeKB > 0 ? sizeKB * 1024 : 1024 * 1024 * 85,
             uninstallCommand: a.UninstallString || '',

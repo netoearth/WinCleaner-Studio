@@ -27,31 +27,32 @@ export const Header: React.FC<HeaderProps> = ({
   totalReclaimableBytes,
 }) => {
   const navItems = [
-    { id: 'cleaner' as ActiveTab, label: '系统与缓存清理', icon: Trash2 },
-    { id: 'duplicates' as ActiveTab, label: '重复文件查重', icon: Copy },
+    { id: 'cleaner' as ActiveTab, label: '系统清理', icon: Trash2 },
+    { id: 'duplicates' as ActiveTab, label: '重复查重', icon: Copy },
     { id: 'large_files' as ActiveTab, label: '大文件透视', icon: HardDrive },
-    { id: 'uninstaller' as ActiveTab, label: '软件深度卸载', icon: PackageX },
+    { id: 'uninstaller' as ActiveTab, label: '软件卸载', icon: PackageX },
     { id: 'startup' as ActiveTab, label: '开机优化', icon: Zap },
-    { id: 'code_engine' as ActiveTab, label: 'Win32 原生内核', icon: Code2 },
+    { id: 'health' as ActiveTab, label: '硬盘健康', icon: Sparkles },
+    { id: 'code_engine' as ActiveTab, label: '原生内核', icon: Code2 },
   ];
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-3.5 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+    <header className="sticky top-0 z-30 flex flex-wrap md:flex-nowrap items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3.5 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 gap-3">
       {/* Zone 1: Single text element wordmark */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white shadow-sm shadow-cyan-500/20">
           <Sparkles className="w-4 h-4 text-white" />
         </div>
         <span className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
           WinCleaner Studio
-          <span className="text-[11px] font-mono font-medium text-cyan-400 bg-cyan-950/60 border border-cyan-800/40 px-1.5 py-0.5 rounded">
+          <span className="text-[11px] font-mono font-medium text-cyan-400 bg-cyan-950/60 border border-cyan-800/40 px-1.5 py-0.5 rounded hidden sm:inline">
             Win32 / Rust & Python
           </span>
         </span>
       </div>
 
-      {/* Zone 2: 4-6 clean text navigation links */}
-      <nav className="hidden lg:flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800/80">
+      {/* Zone 2: Navigation Links (Scrollable on small screens) */}
+      <nav className="flex items-center gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800/80 overflow-x-auto max-w-full order-3 md:order-2 w-full md:w-auto scrollbar-none">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -59,9 +60,9 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap shrink-0 ${
                 isActive
-                  ? 'bg-slate-800 text-cyan-300 shadow-sm border border-slate-700/60'
+                  ? 'bg-slate-800 text-cyan-300 shadow-sm border border-slate-700/60 font-semibold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
               }`}
             >
@@ -72,8 +73,8 @@ export const Header: React.FC<HeaderProps> = ({
         })}
       </nav>
 
-      {/* Zone 3: 1-2 primary actions */}
-      <div className="flex items-center gap-2.5">
+      {/* Zone 3: Primary actions */}
+      <div className="flex items-center gap-2 shrink-0 order-2 md:order-3">
         <button
           onClick={onOpenCodeEngine}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/70 rounded-lg transition-colors whitespace-nowrap"
@@ -85,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <button
           onClick={onQuickCleanAll}
-          className="flex items-center gap-2 px-4 py-1.5 text-xs font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-blue-400 hover:from-cyan-300 hover:to-blue-300 rounded-lg shadow-sm shadow-cyan-500/20 transition-all whitespace-nowrap active:scale-[0.98]"
+          className="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-blue-400 hover:from-cyan-300 hover:to-blue-300 rounded-lg shadow-sm shadow-cyan-500/20 transition-all whitespace-nowrap active:scale-[0.98]"
         >
           <Trash2 className="w-3.5 h-3.5 text-slate-950" />
           <span>一键极速清理</span>
