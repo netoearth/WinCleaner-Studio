@@ -33,7 +33,7 @@ export const NativeEngineModal: React.FC<NativeEngineModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [activeLang, setActiveLang] = useState<'python' | 'rust' | 'batch' | 'powershell'>('python');
+  const [activeLang, setActiveLang] = useState<'exe_build' | 'web_deploy' | 'python' | 'rust' | 'batch' | 'powershell'>('exe_build');
   const [copied, setCopied] = useState<boolean>(false);
   const [isZipping, setIsZipping] = useState<boolean>(false);
 
@@ -41,6 +41,71 @@ export const NativeEngineModal: React.FC<NativeEngineModalProps> = ({
 
   const getActiveCode = () => {
     switch (activeLang) {
+      case 'exe_build':
+        return {
+          filename: 'build-windows-exe.bat',
+          code: `@echo off
+chcp 65001 >nul
+title WinCleaner Studio - 原生 Windows EXE 打包向导
+
+echo ========================================================
+echo        WinCleaner Studio - 原生 EXE 打包编译工具
+echo ========================================================
+echo.
+echo [1/3] 编译 Vite 前端生产资源 (dist/)...
+call npm run build
+
+echo.
+echo [2/3] 安装 Electron 打包引擎 (若已安装将自动跳过)...
+call npm install --save-dev electron electron-builder
+
+echo.
+echo [3/3] 一键编译为 Windows x64 原生独立 EXE...
+npx electron-builder --win --x64
+
+echo.
+echo ========================================================
+echo [成功] 原生 EXE 文件已生成至: dist\\ 或 dist-electron\\ 目录中！
+echo 包括:
+echo  - WinCleaner-Studio Setup 1.0.0.exe (带安装引导向导)
+echo  - win-unpacked\\WinCleaner-Studio.exe (免安装单文件绿色版)
+echo ========================================================
+pause`,
+          language: 'batch',
+          runtimeNote: '【推荐】双击运行项目根目录下的 build-windows-exe.bat，或在终端执行上述命令，即可一键生成原生 Windows .EXE 安装包与绿色单文件版。',
+        };
+      case 'web_deploy':
+        return {
+          filename: 'deploy-guide.sh',
+          code: `# ========================================================
+# WinCleaner Studio - npm run build 生产部署指南
+# ========================================================
+
+# 步骤 1: 编译前端静态资产到 dist/ 目录
+npm run build
+
+# 步骤 2: 启动生产环境全栈服务 (端口 3000)
+# 自动挂载 dist/ 生产网页并提供所有 /api/* 真实系统 API
+npm start
+
+# --------------------------------------------------------
+# 方案 A: 使用 PM2 守护进程开机自动常驻后台
+# --------------------------------------------------------
+npm install -g pm2
+pm2 start "npm start" --name "wincleaner-studio"
+pm2 save
+pm2 startup
+
+# --------------------------------------------------------
+# 方案 B: 封装为 Windows 原生系统服务 (无黑窗口，随系统开机启动)
+# --------------------------------------------------------
+# 1. 下载 nssm.exe (https://nssm.cc/) 并放入系统路径
+# 2. 执行注册:
+nssm install WinCleanerService "node" "server.js"
+nssm start WinCleanerService`,
+          language: 'bash',
+          runtimeNote: 'npm run build 会生成压缩后的 dist/ 目录。执行 npm start 即可在生产环境以高性能模式托管该目录与底层 Win32 API 路由。',
+        };
       case 'python':
         return {
           filename: 'cleaner_win32.py',
@@ -170,7 +235,31 @@ export const NativeEngineModal: React.FC<NativeEngineModalProps> = ({
 
         {/* Language Tabs & Runtime Tip */}
         <div className="px-4 py-2.5 bg-slate-900 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 flex-wrap">
+            <button
+              onClick={() => setActiveLang('exe_build')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+                activeLang === 'exe_build'
+                  ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-300 border border-cyan-500/50 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span>编译为原生 EXE 桌面应用</span>
+            </button>
+
+            <button
+              onClick={() => setActiveLang('web_deploy')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
+                activeLang === 'web_deploy'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Web 生产部署 (npm start)</span>
+            </button>
+
             <button
               onClick={() => setActiveLang('python')}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
@@ -180,7 +269,7 @@ export const NativeEngineModal: React.FC<NativeEngineModalProps> = ({
               }`}
             >
               <FileCode className="w-3.5 h-3.5 text-amber-400" />
-              <span>Python 3 + Win32 (cleaner_win32.py)</span>
+              <span>Python 3 + Win32</span>
             </button>
 
             <button
@@ -192,7 +281,7 @@ export const NativeEngineModal: React.FC<NativeEngineModalProps> = ({
               }`}
             >
               <Cpu className="w-3.5 h-3.5 text-orange-400" />
-              <span>Rust + windows-rs (wincleaner-rs)</span>
+              <span>Rust 极速内核</span>
             </button>
 
             <button
@@ -204,7 +293,7 @@ export const NativeEngineModal: React.FC<NativeEngineModalProps> = ({
               }`}
             >
               <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-              <span>一键清理批处理 (.bat)</span>
+              <span>一键批处理 (.bat)</span>
             </button>
 
             <button
@@ -216,7 +305,7 @@ export const NativeEngineModal: React.FC<NativeEngineModalProps> = ({
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-blue-400" />
-              <span>PowerShell 深度脚本 (.ps1)</span>
+              <span>PowerShell (.ps1)</span>
             </button>
           </div>
 

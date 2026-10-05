@@ -758,21 +758,110 @@ export default function App() {
         )}
 
         {activeTab === 'code_engine' && (
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mx-auto">
-              <Code2 className="w-6 h-6" />
+          <div className="space-y-6">
+            {/* Top Overview Banner */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/20">
+                    <Code2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>原生 EXE 桌面应用编译与生产部署中心</span>
+                      <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded">
+                        Electron / Tauri 2.0 / Node
+                      </span>
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      支持将当前 Web 界面一键编译为 Windows 原生独立 .EXE 桌面程序，或在本地/服务器以生产模式常驻运行
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => setCodeModalOpen(true)}
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold shadow-md shadow-cyan-500/20 transition-all active:scale-95"
+                  >
+                    查看完整脚本与工程导出
+                  </button>
+                </div>
+              </div>
             </div>
-            <h2 className="text-lg font-bold text-white">轻量化 Windows 原生内核与 Win32 API 源代码</h2>
-            <p className="text-xs text-slate-400 max-w-xl mx-auto">
-              针对 Windows 操作系统深度定制，包含 Python 3 (ctypes + winreg 零依赖独立脚本) 与 Rust (windows-rs + Rayon 并发极速架构)，随时一键导出为工程 ZIP 或单个脚本。
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={() => setCodeModalOpen(true)}
-                className="px-5 py-2.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold shadow-lg shadow-cyan-500/20 transition-all active:scale-95"
-              >
-                打开源码查看器与导出中心
-              </button>
+
+            {/* 2-Column Deployment & EXE Guide Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Card 1: Compile to Windows Native EXE */}
+              <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">编译为原生 Windows .EXE</h3>
+                      <p className="text-[11px] text-slate-400">生成 Setup 安装包或绿色免安装单文件</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono text-purple-300 bg-purple-950/50 border border-purple-800/40 px-2 py-0.5 rounded">
+                    一键打包
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  项目已内建 Electron 主进程脚本与 Windows 批处理。在本地项目根目录中，双击运行 <code className="text-cyan-300 bg-slate-950 px-1.5 py-0.5 rounded font-mono">build-windows-exe.bat</code>，或在终端执行：
+                </p>
+
+                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 font-mono text-xs text-cyan-300 space-y-1.5 overflow-x-auto">
+                  <div className="text-slate-500"># 1. 编译前端生产静态文件</div>
+                  <div>npm run build</div>
+                  <div className="text-slate-500 mt-2"># 2. 安装 electron 打包依赖并编译 EXE</div>
+                  <div>npm install --save-dev electron electron-builder</div>
+                  <div>npx electron-builder --win --x64</div>
+                </div>
+
+                <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>产物位于 <code className="text-slate-300">dist/</code> 或 <code className="text-slate-300">dist-electron/</code>，体积自动优化，具备原生窗口与系统托盘。</span>
+                </div>
+              </div>
+
+              {/* Card 2: Web Production Deployment */}
+              <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                      <Terminal className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">npm run build 生产部署</h3>
+                      <p className="text-[11px] text-slate-400">全栈生产模式 / PM2 / 开机常驻后台</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950/50 border border-emerald-800/40 px-2 py-0.5 rounded">
+                    生产全栈
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  <code className="text-cyan-300 bg-slate-950 px-1.5 py-0.5 rounded font-mono">npm run build</code> 会将 React 前端界面压缩至 <code className="text-cyan-300 bg-slate-950 px-1.5 py-0.5 rounded font-mono">dist/</code>。启动生产全栈服务托管静态页与真实 Win32 接口：
+                </p>
+
+                <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 font-mono text-xs text-emerald-300 space-y-1.5 overflow-x-auto">
+                  <div className="text-slate-500"># 生产运行 (自动挂载 dist/ 与真实系统 API)</div>
+                  <div>npm run build</div>
+                  <div>npm start</div>
+                  <div className="text-slate-500 mt-2"># 开机自启常驻后台 (PM2 守护进程)</div>
+                  <div>npm install -g pm2</div>
+                  <div>pm2 start "npm start" --name "wincleaner"</div>
+                </div>
+
+                <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>服务启动后监听 <code className="text-slate-300">http://localhost:3000</code>，局域网或本地浏览器秒开访问。</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
