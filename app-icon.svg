@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="50%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67e8f9" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Rounded App Background -->
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#bg)" stroke="#1e293b" stroke-width="6" />
+
+  <!-- Shield Base -->
+  <path d="M256 96 C336 96 384 128 384 128 C384 264 328 360 256 416 C184 360 128 264 128 128 C128 128 176 96 256 96 Z" 
+        fill="url(#shieldGrad)" 
+        filter="url(#glow)" 
+        opacity="0.9" />
+
+  <!-- Inner Shield Highlight -->
+  <path d="M256 120 C320 120 360 146 360 146 C360 256 312 338 256 388 C200 338 152 256 152 146 C152 146 192 120 256 120 Z" 
+        fill="#0f172a" 
+        opacity="0.6" />
+
+  <!-- Magic Sparkles / Broom Sweep Star Symbol -->
+  <path d="M256 160 L268 220 L328 232 L268 244 L256 304 L244 244 L184 232 L244 220 Z" 
+        fill="url(#sparkleGrad)" />
+
+  <!-- Floating Sparkles -->
+  <path d="M340 180 L346 205 L371 211 L346 217 L340 242 L334 217 L309 211 L334 205 Z" 
+        fill="#a5f3fc" />
+  <path d="M172 268 L177 288 L197 293 L177 298 L172 318 L167 298 L147 293 L167 288 Z" 
+        fill="#a5f3fc" />
+
+  <!-- Fast Disk Speed Lines -->
+  <circle cx="256" cy="336" r="16" fill="#38bdf8" opacity="0.8" />
+  <circle cx="216" cy="344" r="8" fill="#38bdf8" opacity="0.5" />
+  <circle cx="296" cy="344" r="8" fill="#38bdf8" opacity="0.5" />
+</svg>
