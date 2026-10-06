@@ -1,35 +1,28 @@
-const { app, BrowserWindow, ipcMain, shell, Tray, Menu } = require('electron');
+const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const fs = require('fs');
 
 let mainWindow = null;
-let serverProcess = null;
-let tray = null;
-
-// Determine if in dev or production
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 const PORT = process.env.PORT || 3000;
 
 function startBackendServer() {
   if (isDev) {
-    // In dev, the server is usually already running via `npm run dev`
+    // In development mode, server is already running on localhost:3000
     return;
   }
 
-  // In production package, run the server process
   try {
-    const serverScript = path.join(__dirname, '../server.js');
-    serverProcess = spawn(process.execPath, [serverScript], {
-      env: { ...process.env, NODE_ENV: 'production', PORT: String(PORT) },
-      stdio: 'ignore',
-      windowsHide: true,
-    });
-
-    serverProcess.on('error', (err) => {
-      console.error('[Electron] Failed to start backend server:', err);
-    });
+    // In production build, load the bundled Express backend directly inside Electron main process
+    const bundledServerPath = path.join(__dirname, '../dist/server.cjs');
+    if (fs.existsSync(bundledServerPath)) {
+      require(bundledServerPath);
+      console.log('[Electron] In-process production Express server started on port', PORT);
+    } else {
+      console.warn('[Electron] bundled server not found at', bundledServerPath);
+    }
   } catch (err) {
-    console.error('[Electron] Server start exception:', err);
+    console.error('[Electron] Error starting production backend:', err);
   }
 }
 
@@ -52,22 +45,19 @@ function createWindow() {
     show: false,
   });
 
-  // Graceful show when ready
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
 
-  // External link handler
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   });
 
-  // Load backend URL or wait 500ms
   const targetUrl = `http://localhost:${PORT}`;
   const loadPage = () => {
     mainWindow.loadURL(targetUrl).catch(() => {
-      setTimeout(loadPage, 600);
+      setTimeout(loadPage, 500);
     });
   };
 
@@ -90,11 +80,6 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (serverProcess) {
-    try {
-      serverProcess.kill();
-    } catch {}
-  }
   if (process.platform !== 'darwin') {
     app.quit();
   }

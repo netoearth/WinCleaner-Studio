@@ -1,6 +1,5 @@
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import { 
@@ -19,8 +18,9 @@ import {
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const appDir = typeof __dirname !== 'undefined'
+  ? (__dirname.endsWith('dist') ? path.resolve(__dirname, '..') : __dirname)
+  : process.cwd();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -245,9 +245,9 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve(__dirname, 'dist')));
+    app.use(express.static(path.resolve(appDir, 'dist')));
     app.get('*', (req, res) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+      res.sendFile(path.resolve(appDir, 'dist', 'index.html'));
     });
   }
 
