@@ -1,14 +1,15 @@
-# WinCleaner Studio - Windows 系统清理与性能优化大师
+# WinCleaner Studio - Windows 深度系统清理与性能优化大师
 
 <div align="center">
 
 ![Windows 11 Fluent](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20%2F%20Server-0078D6?style=flat&logo=windows)
 ![Win32 API](https://img.shields.io/badge/API-Win32%20Native%20API-00599E?style=flat)
+![Desktop EXE](https://img.shields.io/badge/Desktop-Electron%20%2F%20Tauri%202.0%20EXE-blueviolet?style=flat)
 ![Rust Engine](https://img.shields.io/badge/Core-Rust%20%2B%20Python%203-dea584?style=flat&logo=rust)
 ![AI Powered](https://img.shields.io/badge/AI-Gemini%203.8%20Flash-4285F4?style=flat&logo=google)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green?style=flat)
 
-**基于 Win32 API 与 Rust/Python 高效轻量内核的专业级 Windows 系统垃圾清理、浏览器缓存净化、大文件与重复文件查重及软件一键卸载工具。**
+**基于 Win32 原生 API 与 Rust/Python 高效轻量内核的专业级 Windows 系统垃圾清理、软件深度卸载、重复文件查重、开机自启治理及物理磁盘健康监测工具箱。支持一键编译为原生 Windows 桌面 .EXE 应用。**
 
 </div>
 
@@ -16,223 +17,251 @@
 
 ## 📖 目录
 
-- [🌟 核心功能特性](#-核心功能特性)
-- [🏗️ 双核心原生技术架构](#️-双核心原生技术架构)
-- [🔬 调用的关键 Win32 API 说明](#-调用的关键-win32-api-说明)
-- [📦 项目工程结构](#-项目工程结构)
-- [🚀 快速开始与编译指南](#-快速开始与编译指南)
-  - [1. 启动 Web 交互工作台](#1-启动-web-交互工作台)
-  - [2. 独立运行 Python 原生单文件引擎](#2-独立运行-python-原生单文件引擎)
-  - [3. 编译 Rust 高性能原生引擎](#3-编译-rust-高性能原生引擎)
-  - [4. 执行 Windows 原生批处理 / PowerShell 脚本](#4-执行-windows-原生批处理--powershell-脚本)
-- [🛡️ 数据安全与撤销保护设计](#️-数据安全与撤销保护设计)
+- [🌟 6 大核心模块与真实系统功能](#-6-大核心模块与真实系统功能)
+- [📦 编译为 Windows 原生 .EXE 应用（两种方式）](#-编译为-windows-原生-exe-应用两种方式)
+  - [方案 1：Electron 一键打包（零门槛首选，无需 Rust 或 C++ 编译器）](#方案-1electron-一键打包零门槛首选无需-rust-或-c-编译器)
+  - [方案 2：Tauri 2.0 极速轻量打包（体积仅 ~10MB）](#方案-2tauri-20-极速轻量打包体积仅-10mb)
+- [🌐 `npm run build` 产物解析与 Web 生产部署](#-npm-run-build-产物解析与-web-生产部署)
+  - [1. 生产全栈启动 (直接运行)](#1-生产全栈启动-直接运行)
+  - [2. Windows 开机自启常驻后台 (PM2 守护)](#2-windows-开机自启常驻后台-pm2-守护)
+  - [3. 注册为 Windows 原生系统服务 (无黑窗口)](#3-注册为-windows-原生系统服务-无黑窗口)
+- [🏗️ 架构设计与调用的关键 Win32 API](#️-架构设计与调用的关键-win32-api)
+- [📂 项目完整目录结构](#-项目完整目录结构)
+- [🚀 本地开发快速开始](#-本地开发快速开始)
+- [🛡️ 数据安全与防误删回收站保护](#️-数据安全与防误删回收站保护)
 
 ---
 
-## 🌟 核心功能特性
+## 🌟 6 大核心模块与真实系统功能
 
-### 1. 🧹 系统垃圾与浏览器缓存深度净化 (Junk & Cache Cleaner)
-* **Windows 系统核心垃圾**：
-  * `%TEMP%` 及 `C:\Windows\Temp` 用户与系统运行临时文件。
-  * `C:\$Recycle.Bin` 回收站深度清空（底层调用 Win32 `SHEmptyRecycleBinW` 静默免确认清空）。
-  * `SoftwareDistribution\Download` Windows Update 补丁缓存与累积更新包。
-  * `CrashDumps`、`Minidump` 与 `MEMORY.DMP` 应用程序与系统蓝屏转储日志。
-  * `IconCache.db` 与 `thumbcache_*.db` 资源管理器缩略图与图标数据库。
-* **浏览器与开发应用缓存**：
-  * **Google Chrome**：`Cache_Data` 离线静态网页资源、Media Cache 与 V8 `Code Cache`。
-  * **Microsoft Edge**：网页网络缓存、GPU 着色器渲染缓存与 SmartScreen 暂存。
-  * **Mozilla Firefox**：Profiles 目录下 `cache2` 结构。
-  * **高频开发工具**：VS Code 编辑器工作区缓存、Python pip wheel 暂存包、npm 全局依赖缓存。
-* **物理位置下钻**：支持点击每项规则展开抽样查看实际物理路径、文件大小与修改时间。
+本项目的全部功能均**直接与 Windows 操作系统内核及硬件接口对接**，杜绝纯演示空架子：
 
-### 2. 🔍 重复文件两级哈希智能查重 (Duplicate File Finder)
+### 1. 🩺 物理硬盘 S.M.A.R.T. 健康与寿命透视 (全盘真实识别)
+* **双通道底层硬件枚举**：优先调用 PowerShell `Get-PhysicalDisk` 与存储可靠性计数器，同时挂接 WMI `Win32_DiskDrive` 物理底层接口，并通过 `Get-Partition` 准确映射盘符（C:、D:、G: 等）。
+* **真实识别全部驱动器**：自动枚举主机上插入的**所有 NVMe 固态硬盘、SATA 固态、机械硬盘及移动硬盘**。
+* **物理遥测指标**：采集主控芯片实时传感器温度（过热预警）、通电时长、累计写入数据量（TBW）、通电循环计数与健康评分。
+
+### 2. 🗑️ 软件深度卸载与残留强力净化 (真实注册表与反安装)
+* **真实已装软件提取**：并发遍历 64 位、32 位 WOW64 与当前用户的 Windows 注册表 `Uninstall` 项，**100% 真实展示本机已安装程序**（绝无虚构软件）。
+* **原生反安装调用**：点击卸载时，后端 `POST /api/system/uninstall-app` **真实拉起官方卸载命令**（支持静默 `msiexec /x /qn` 或官方反安装向导）。
+* **孤立残留清理**：卸载完成后自动扫描 `%LOCALAPPDATA%\软件名` 残留文件夹并物理抹除注册表孤立项。
+
+### 3. 📑 重复文件两级哈希智能查重 (真实两级哈希 + 安全移入回收站)
 * **两级分块哈希算法**：
-  1. **第一级 (尺寸预筛)**：按文件物理字节数做初级分组，过滤出尺寸相同的候选集；
-  2. **第二级 (分块快筛)**：读取文件头 `4KB` 分块计算轻量 MD5 极速快筛，避免直接全盘做高耗时大文件哈希；
-  3. **第三级 (全量校验)**：快筛哈希相同的候选文件并发比对完整 **SHA-256**，保证 100% 零误判。
-* **智能规则选择**：支持一键“保留最早原件”、“保留最新文件”、“选择所有副本”与多维度分类（安装包、视频工程、压缩归档、代码文档）。
-* **回收站撤销保护**：调用 Win32 `SHFileOperationW`（`FOF_ALLOWUNDO`），删除默认移入回收站而非直接物理抹除。
+  1. **第一级（尺寸预筛）**：按文件真实字节数进行初筛分组；
+  2. **第二级（16KB 分块快筛）**：流式读取文件头块计算 MD5 快速过滤；
+  3. **第三级（全量碰撞校验）**：对候选组计算完整 **SHA-256** 哈希，确保 100% 零误判。
+* **全盘目录与自定义路径查重**：默认扫描 Downloads（下载）、Desktop（桌面）、Documents（文档），并支持**在界面输入任意本地盘符或目录（如 `D:\` 或 `G:\download`）点击“扫描指定目录”**。
+* **若无重复文件则展示干净空状态**，绝不凭空伪造不存在的文件。
+* **删除操作真实调用 Win32 接口送入 Windows 原生回收站**（支持一键撤销还原）。
 
-### 3. 📊 大文件深度透视与磁盘存储空间分布 (Large File Analyzer & Disk Space Visualizer)
-* **多阈值过滤**：支持 `>100MB`、`>500MB`、`>1GB`、`>5GB` 快速筛选。
-* **全景存储分布图**：基于高性能原生 SVG 打造的双重视图（**圆环占比图 Donut Chart** 与 **分类柱状图 Bar Chart**），细分剖析：
-  * Windows 系统核心（`C:\Windows`, WinSxS, `pagefile.sys`）
-  * 已安装软件与游戏（`Program Files`, Steam, Epic）
-  * 用户个人数据（文档、下载、桌面大文件）
-  * 垃圾与缓存空间（可立即释放的暂存）
-  * 可用物理空闲空间
-* 自动识别虚拟机虚拟硬盘（`.vmdk` / `.vhdx`）、深度学习大模型权重（`.gguf`）、剪辑暂存刮擦盘（`.pek`）与系统镜像（`.iso`）。
+### 4. 📊 大文件深度透视与空间占用分析 (真实文件扫描)
+* **多阈值精准过滤**：支持 `>100MB`、`>500MB`、`>1GB`、`>5GB` 快速筛选。
+* **真实文件物理定位**：显示绝对物理路径与真实最后修改时间。
+* **支持自定义扫描目录**：可在界面直接指定分析目录，删除同样安全移入回收站。
 
-### 4. 🗑️ 软件深度卸载与残留强力清除 (Software Uninstaller)
-* **注册表全量枚举**：同时读取 64 位注册表、WOW6432Node 及当前用户 `Uninstall` 项。
-* **静默无弹窗卸载命令**：自动提取 `QuietUninstallString` 或 MSI 产品代码（`msiexec /x {GUID} /qn /norestart`），实现一键免点击静默卸载。
-* **强力残留扫描与抹除**：卸载完成后自动扫描留在 `AppData\Local`、`AppData\Roaming`、`ProgramData` 中的孤立文件夹，并定位 `HKLM\SOFTWARE` 残留注册表键。
+### 5. ⚡ Windows 开机自启优化 (注册表 Run 键真读真写)
+* **真实自启项读取**：读取 `HKCU:\Software\Microsoft\Windows\CurrentVersion\Run` 与 `HKLM` 自启动项。
+* **真实生效切换**：开关切换或“一键禁用高开销自启项”时，**真实修改 Windows 注册表**，切实减少系统开机耗时。
 
-### 5. ⚡ 开机自启优化与驻留服务治理 (Startup Manager)
-* 监控 `HKCU\Run`、`HKLM\Run` 及 Windows 计划任务中的启动项。
-* 评估启动对开机时间的物理影响（高、中、轻微），支持一键禁用高开销后台启动项。
-
-### 6. 🩺 硬盘 S.M.A.R.T. 健康度与寿命透视 (Disk S.M.A.R.T. Telemetry)
-* **三大核心度量**：
-  * **综合健康状态 (Health %)**：综合备用扇区与 ECC 校验状态，展示 PASSED 自检状态；
-  * **实时物理工作温度 (°C)**：传感器温度区间监视与过热告警；
-  * **预估剩余寿命 (% / 年限)**：基于闪存磨损消耗比与总主机写入量（TBW）推算；
-* **工况指标**：累计通电时间（小时）、通电循环次数、异常掉电保护计数与重分配扇区数。
-* **原生短自检 (Self-Test)**：支持一键触发底层 S.M.A.R.T. 固件自检例程。
-
-### 7. 🤖 AI 智能清理建议 (AI Storage Optimization Engine)
-* 基于服务端 **Gemini 3.8 Flash** 智能分析，结合当前全盘分析数据给出：
-  * 预估最大可释放潜力（GB）
-  * 释放收益最高且无破坏性的首选类别
-  * 各大类别详细深度分析理由及直接执行按钮
-  * **一键执行推荐大扫除 (Master Action)**：一键联动释放垃圾文件与重复冗余。
+### 6. 🧹 系统垃圾与浏览器离线缓存清理
+* **Win32 底层接口清空回收站**：调用 `shell32.dll!SHEmptyRecycleBinW` 静默免弹窗清空系统回收站。
+* **临时文件抹除**：物理清理 `%TEMP%`、Windows CrashDumps 与 Chrome/Edge 浏览器离线网页缓存。
 
 ---
 
-## 🏗️ 双核心原生技术架构
+## 📦 编译为 Windows 原生 .EXE 应用（两种方式）
 
-根据轻量化、运行高效、配合 Win32 API 开发的需求，项目提供了两套独立且可直接运行的原生代码：
+本项目已为你全面配置好了桌面端打包所需的主进程、配置文件与一键脚本。
 
-```
-                ┌──────────────────────────────────────────────┐
-                │        WinCleaner Studio 统一架构             │
-                └──────────────────────┬───────────────────────┘
-                                       │
-         ┌─────────────────────────────┴─────────────────────────────┐
-         ▼                                                           ▼
-┌─────────────────────────────────┐         ┌─────────────────────────────────┐
-│     Rust 原生极速引擎 (RS)      │         │     Python 3 原生轻量引擎 (PY)   │
-├─────────────────────────────────┤         ├─────────────────────────────────┤
-│ • 基于 windows-rs (windows 0.58)│         │ • 纯标准库 (ctypes + winreg)    │
-│ • Rayon 细粒度并行多线程数据管线│         │ • 0 外部依赖，开箱即运行        │
-│ • 并发 SHA-256 流式哈希校验     │         │ • ThreadPoolExecutor 多线程扫描 │
-│ • 内存占用 < 15MB               │         │ • PyInstaller 可编译为 <10MB Exe│
-└─────────────────────────────────┘         └─────────────────────────────────┘
-```
+### 方案 1：Electron 一键打包（零门槛首选，无需 Rust 或 C++ 编译器）
 
----
+> 💡 **核心优势**：只要有 Node.js 即可打包，**完全不需要安装 Rust、不需要安装几个 GB 的 Visual Studio C++ 生成工具**！
 
-## 🔬 调用的关键 Win32 API 说明
+#### 一键打包步骤：
+1. **方式 A（双击即打）**：
+   在项目根目录下直接双击运行 **`build-windows-exe.bat`**。
+2. **方式 B（命令行执行）**：
+   ```powershell
+   # 1. 编译前端生产静态资源
+   npm run build
 
-| Win32 API 函数 | 头文件 / 动态库 | 核心应用场景与作用 |
-| :--- | :--- | :--- |
-| `SHEmptyRecycleBinW` | `shell32.dll` | 调用系统底层接口清空指定驱动器或全盘回收站，配合 `SHERB_NOCONFIRMATION \| SHERB_NOPROGRESSUI` 实现无弹窗静默清空 |
-| `SHFileOperationW` | `shell32.dll` | 结构化文件操作，使用 `FO_DELETE` 配合 `FOF_ALLOWUNDO` 标志，将文件安全送至回收站而非直接抹除，提供误删撤销能力 |
-| `GetDiskFreeSpaceExW` | `kernel32.dll` | 获取驱动器精确总物理字节数、可用字节数与空闲字节数，不受 FAT32/NTFS 簇大小统计偏差影响 |
-| `GetTempPathW` | `kernel32.dll` | 获取系统与当前用户标准的临时文件夹物理路径 |
-| `RegOpenKeyExW` / `RegEnumKeyExW` | `advapi32.dll` | 枚举 `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall`，深度遍历已装软件与静默卸载命令 |
-| `DeviceIoControl` | `kernel32.dll` | 发送 `IOCTL_STORAGE_QUERY_PROPERTY` 或 `SMART_RCV_DRIVE_DATA` 控制码，直接与磁盘驱动程序通信读取 S.M.A.R.T. 寄存器 |
+   # 2. 安装 electron 打包依赖 (仅首次需执行)
+   npm install --save-dev electron electron-builder
+
+   # 3. 一键编译为 Windows x64 原生应用
+   npx electron-builder --win --x64
+   ```
+
+#### 产物位置：
+打包完成后，可在项目下的 `dist\` 或 `dist-electron\` 目录中获取：
+* 📦 **`WinCleaner-Studio Setup 1.0.0.exe`**：标准的 Windows 安装引导向导。
+* 📁 **`win-unpacked\WinCleaner-Studio.exe`**：**免安装绿色单文件便携版**，可直接拷到任意电脑或 U 盘双击秒开！
 
 ---
 
-## 📦 项目工程结构
+### 方案 2：Tauri 2.0 极速轻量打包（体积仅 ~10MB）
+
+> 💡 **核心优势**：生成的可执行文件体积超小（仅约 10MB~15MB），基于 Windows 系统自带的 WebView2 渲染。
+> ⚠️ **前提条件**：本机已安装 **Rust 工具链 (`rustc` / `cargo`)** 与 **Visual Studio C++ Build Tools**。
+
+本项目已完整内置好官方标准的 `src-tauri` 目录（含 `tauri.conf.json`、`Cargo.toml`、`build.rs`、`main.rs` 及权限策略）：
+
+```powershell
+# 1. 编译前端资源
+npm run build
+
+# 2. 执行 Tauri 原生编译
+npx tauri build
+```
+编译产物位于 `src-tauri\target\release\wincleaner-studio.exe`。
+
+---
+
+## 🌐 `npm run build` 产物解析与 Web 生产部署
+
+当运行 `npm run build` 时，Vite 会将所有的 React 界面、Tailwind CSS、图标与静态资源压缩打包输出到 `./dist` 目录：
+
+```text
+WinCleaner-Studio/
+├── dist/                     # 前端生产静态资产 (HTML / CSS / JS bundle)
+├── server.ts                 # Express 全栈服务 (处理所有 Win32 硬件与系统 API)
+├── package.json
+└── tsx                       # 生产执行引擎
+```
+
+### 1. 生产全栈启动 (直接运行)
+```powershell
+# 编译前端
+npm run build
+
+# 启动生产服务 (自动挂载 dist/ 生产网页并提供所有真实 /api/ 系统接口)
+npm start
+```
+打开浏览器访问 `http://localhost:3000` 即可使用。
+
+### 2. Windows 开机自启常驻后台 (PM2 守护)
+若希望在本地电脑上开机自动静默后台运行：
+```powershell
+# 全局安装 PM2
+npm install -g pm2
+
+# 启动服务并命名
+pm2 start "npm start" --name "wincleaner-studio"
+
+# 保存当前进程列表，实现开机自动唤起
+pm2 save
+```
+
+### 3. 注册为 Windows 原生系统服务 (无黑窗口)
+如果希望完全摆脱终端黑窗口，做成 Windows 后台服务：
+1. 下载轻量服务工具 [nssm.exe](https://nssm.cc/) 并放入系统路径；
+2. 执行注册：
+   ```powershell
+   nssm install WinCleanerService "npm.cmd" "start"
+   nssm set WinCleanerService AppDirectory "D:\你的项目目录"
+   nssm start WinCleanerService
+   ```
+
+---
+
+## 🏗️ 架构设计与调用的关键 Win32 API
 
 ```
-├── server.ts                       # Express 全端服务端 (Gemini 3.8 Flash API 路由 + Vite 中间件)
+                     ┌──────────────────────────────────────────────┐
+                     │          WinCleaner Studio 统一架构          │
+                     └──────────────────────┬───────────────────────┘
+                                            │
+        ┌───────────────────────────────────┼───────────────────────────────────┐
+        ▼                                   ▼                                   ▼
+┌──────────────────────────┐    ┌──────────────────────────┐    ┌──────────────────────────┐
+│   Windows 桌面原生应用   │    │    Web 生产全栈模式      │    │  独立 Python / Rust 内核 │
+├──────────────────────────┤    ├──────────────────────────┤    ├──────────────────────────┤
+│ • Electron / Tauri 2.0   │    │ • React 19 + Express     │    │ • Python ctypes (零依赖) │
+│ • 原生窗口 + 托盘控制    │    │ • 本地端口 3000          │    │ • Rust windows-rs        │
+│ • 双击 Setup.exe 或便携版│    │ • PM2 开机自动常驻后台   │    │ • 命令行极速批量清理     │
+└──────────────────────────┘    └──────────────────────────┘    └──────────────────────────┘
+```
+
+| Win32 API / 底层接口 | 核心作用与使用场景 |
+| :--- | :--- |
+| `SHEmptyRecycleBinW` | 调用系统底层接口清空全盘回收站，实现静默免确认物理清空 |
+| `SHFileOperationW` (`FOF_ALLOWUNDO`) | 删除重复/大文件时移入 Windows 原生回收站而非硬删除，支持误删还原 |
+| `GetDiskFreeSpaceExW` | 获取驱动器精确总物理字节数、可用字节数与空闲字节数 |
+| `Get-PhysicalDisk` / `Win32_DiskDrive` | 底层枚举 NVMe/SATA/HDD 物理驱动器，读取温度与健康评分 |
+| `RegOpenKeyExW` / `RegEnumKeyExW` | 遍历 Windows 注册表 Uninstall 键与 Run 自启动键 |
+
+---
+
+## 📂 项目完整目录结构
+
+```text
+├── server.ts                       # Express 全端服务端 (Win32 API 路由 + 生产静态挂载)
 ├── index.html                      # HTML 入口
-├── package.json                    # 依赖清单与启动脚本
-├── vite.config.ts                  # Vite 构建配置
+├── package.json                    # 依赖清单、npm start 与 build:exe 指令
+├── vite.config.ts                  # Vite 构建配置 (已配置 import.meta.dirname)
+├── build-windows-exe.bat           # 【新增】双击一键打包 Windows EXE 批处理
+├── DEPLOYMENT_AND_EXE_GUIDE.md     # 生产部署与 EXE 打包全指南
+├── electron/
+│   ├── main.cjs                    # 【新增】Electron 原生主进程入口
+│   └── preload.cjs                 # 【新增】Electron 安全预加载脚本
+├── src-tauri/                      # 【新增】Tauri 2.0 官方工程全套配置
+│   ├── tauri.conf.json             # Tauri 窗口与构建配置
+│   ├── Cargo.toml                  # Rust 依赖清单
+│   ├── build.rs                    # 极速构建脚本
+│   ├── src/main.rs                 # Tauri 启动入口
+│   └── capabilities/default.json   # 权限策略配置
 ├── src/
 │   ├── main.tsx                    # React SPA 启动入口
-│   ├── App.tsx                     # 主应用控制器与状态总线
+│   ├── App.tsx                     # 主应用控制器、状态总线与功能路由
 │   ├── types.ts                    # 全量 TypeScript 接口定义
-│   ├── index.css                   # 全局样式与自定义排版
 │   ├── components/
-│   │   ├── Header.tsx              # 顶部导航契约
+│   │   ├── Header.tsx              # 顶部导航
 │   │   ├── DriveOverview.tsx       # 磁盘状态与驱动器卡片
-│   │   ├── DiskUsageChartPanel.tsx # 基于 Recharts 的空间类型分布面板 (圆环/柱状图)
-│   │   ├── DiskSmartHealthPanel.tsx# 硬盘 S.M.A.R.T. 健康与寿命透视面板
-│   │   ├── AiSmartAdvisor.tsx      # AI 智能清理决策与潜力分析区域
+│   │   ├── DiskUsageChartPanel.tsx # 磁盘空间类型分布图 (圆环/柱状图)
+│   │   ├── DiskSmartHealthPanel.tsx# 真实 S.M.A.R.T. 硬件健康与寿命透视
 │   │   ├── JunkCleaner.tsx         # 垃圾文件与浏览器缓存清理模块
-│   │   ├── DuplicateFinder.tsx     # 重复文件两级哈希智能查重模块
-│   │   ├── LargeFileAnalyzer.tsx   # 大文件深度透视与空间占用分析模块
-│   │   ├── AppUninstaller.tsx      # 软件一键卸载与残留强力净化模块
-│   │   ├── StartupManager.tsx      # 开机自启优化与服务治理模块
-│   │   ├── NativeEngineModal.tsx   # 原生代码查看器与 1-Click ZIP 打包下载中心
-│   │   └── CleaningModal.tsx       # 实时 Win32 API 清理动画与控制台终端模态框
-│   ├── data/
-│   │   └── mockSystemData.ts       # 真实 Windows 路径仿真数据集与格式化工具
+│   │   ├── DuplicateFinder.tsx     # 重复文件两级哈希智能查重 (支持自定义路径)
+│   │   ├── LargeFileAnalyzer.tsx   # 大文件深度透视与清理模块
+│   │   ├── AppUninstaller.tsx      # 真实注册表软件深度卸载与残留净化
+│   │   ├── StartupManager.tsx      # 真实注册表开机自启治理模块
+│   │   ├── NativeEngineModal.tsx   # EXE 编译 / 部署指南 / 原生源码查看器
+│   │   └── CleaningModal.tsx       # 实时 Win32 清理进度动画模态框
 │   └── native/
-│       └── nativeCodeRepository.ts # Python、Rust、Batch、PowerShell 全套原生源码仓
+│       └── nativeCodeRepository.ts # 独立 Python / Rust / 批处理原生内核源码仓
 ```
 
 ---
 
-## 🚀 快速开始与编译指南
+## 🚀 本地开发快速开始
 
-### 1. 启动 Web 交互工作台
-
-项目基于 React 19、Tailwind CSS 与 Vite，已配置好全端 Express 服务：
-
-```bash
-# 安装依赖 (项目已自带 .npmrc 自动处理依赖解析，亦可显式加上参数)
+```powershell
+# 1. 安装项目依赖
 npm install
 
-# 若在某些特定旧版 npm 环境下提示 ERESOLVE，可使用：
-npm install --legacy-peer-deps
-
-# 启动全栈开发服务 (端口 3000)
+# 2. 启动本地全栈开发环境 (端口 3000)
 npm run dev
 
-# 编译生产包
+# 3. 编译生产前端资产 (dist/)
 npm run build
+
+# 4. 启动生产服务器
+npm start
+
+# 5. 打包为 Windows 原生 EXE 应用
+npm run build:exe
 ```
 
 ---
 
-### 2. 独立运行 Python 原生单文件引擎
+## 🛡️ 数据安全与防误删回收站保护
 
-进入应用后点击右上角 **“导出原生源码”** -> **“下载当前单文件”** 获取 `cleaner_win32.py`：
-
-```bash
-# 直接运行 (无需安装任何第三方库，纯 Python 3 原生标准库)
-python cleaner_win32.py
-```
-
-若需打包为独立单个可执行文件（无环境依赖）：
-
-```bash
-pip install pyinstaller
-pyinstaller --onefile --windowed --name="WinCleanerPro" cleaner_win32.py
-# 生成的可执行文件位于: dist\WinCleanerPro.exe (< 10MB)
-```
-
----
-
-### 3. 编译 Rust 高性能原生引擎
-
-点击 **“打包下载完整工程 ZIP”**，解压 `rust_win32_engine` 目录：
-
-```bash
-cd rust_win32_engine
-
-# Debug 测试运行
-cargo run
-
-# Release 生产级优化编译 (体积小、极速性能)
-cargo build --release
-
-# 编译产物位于: target\release\wincleaner-rs.exe
-```
-
----
-
-### 4. 执行 Windows 原生批处理 / PowerShell 脚本
-
-在导出的 ZIP 包中，包含开箱即用的原生脚本：
-* `quick_clean.bat`：右键选择 **【以管理员身份运行】**，自动清理临时目录、更新补丁、崩溃日志并清空回收站。
-* `deep_optimize.ps1`：PowerShell 高级优化脚本，支持刷新 DNS 缓存、传递优化清理与 DISM 组件冗余分析。
-
----
-
-## 🛡️ 数据安全与撤销保护设计
-
-* **防误删保护**：对于重复文件与大文件，默认调用 `SHFileOperationW` 带 `FOF_ALLOWUNDO` 标志移入 Windows 原生回收站，支持随时还原。
-* **系统关键项免干扰**：系统级重要规则预置风险等级标识，预读取日志（Prefetch）与系统更新缓存提供明确风险提示与服务重启保护。
-* **注册表与目录双重备份**：软件卸载残留深度清理前明确展示即将抹除的注册表键与 AppData 残留路径。
+1. **防误删保护**：对于重复文件与大文件，默认调用 `SHFileOperationW` 带 `FOF_ALLOWUNDO` 标志安全移入 **Windows 原生回收站**，支持误删随时撤销还原。
+2. **系统重要项保护**：系统核心文件均有风险等级标识与防误操作确认。
+3. **注册表深度保护**：软件卸载残留清理前明确展示即将抹除的注册表键与 AppData 留存目录。
 
 ---
 
 <div align="center">
-由 WinCleaner Studio 团队精心打造 · 专为高效纯净的 Windows 体验设计
+由 WinCleaner Studio 团队精心打造 · 专为高效、纯净、安全的原生 Windows 体验设计
 </div>
